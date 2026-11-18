@@ -76,6 +76,7 @@ const server=http.createServer(async(req,res)=>{
   try {
     if (req.headers.host !== `127.0.0.1:${port}`) return json(res,403,{error:'仅接受本机地址'});
     const url=new URL(req.url,origin);
+    if(req.method==='GET' && ['/assets/idle.gif','/assets/react.gif'].includes(url.pathname)) {res.writeHead(200,{'Content-Type':'image/gif','Cache-Control':'public, max-age=3600'});return res.end(await readFile(new URL('.'+url.pathname,import.meta.url)));}
     if(req.method==='GET' && url.pathname==='/') {res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'}); return res.end(await readFile(new URL('./index.html',import.meta.url)));}
     if(req.headers.origin && req.headers.origin!==origin) return json(res,403,{error:'拒绝跨域请求'});
     if(req.headers.authorization!==`Bearer ${token}`) return json(res,401,{error:'需要本地访问口令'});

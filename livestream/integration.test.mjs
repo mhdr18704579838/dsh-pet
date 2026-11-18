@@ -25,6 +25,7 @@ test('live pipeline uses model, TTS, lock, broadcast, playback ack, then next co
     assert.equal((await request('/state',null,false)).status,401);
     assert.equal((await fetch(base+'/state',{headers:{Authorization:'Bearer test',Origin:'https://untrusted.example'}})).status,403);
     assert.equal((await request('/')).status,200);
+    for(const name of ['idle','react']) {const r=await request('/assets/'+name+'.gif',null,false);assert.equal(r.status,200);assert.equal(r.headers.get('content-type'),'image/gif');assert.ok((await r.arrayBuffer()).byteLength>1000);}
     await request('/events',{id:'1',user:'a',text:'你好'});await request('/events',{id:'2',user:'b',text:'吃饭了吗'});
     await request('/control',{action:'start'});
     const first=await until(async()=> (await(await request('/state')).json()).active);
