@@ -1,5 +1,7 @@
 # dsh-pet 🐾
 
+> 本 fork 新增：[抖音直播桥原型与启动说明](livestream/README.md)。包含本地模拟弹幕、串行语音播放、字幕控制台、桌宠接口对接和实验性可见评论转发；真实直播间联调尚未完成。
+
 <p align="center">
   <a href="https://www.npmjs.com/package/dsh-pet"><img alt="npm version" src="https://img.shields.io/npm/v/dsh-pet?label=npm&color=blue"></a>
   <a href="https://www.npmjs.com/package/dsh-pet"><img alt="npm monthly downloads" src="https://img.shields.io/npm/dm/dsh-pet?label=%E6%9C%88%E4%B8%8B%E8%BD%BD&color=brightgreen"></a>

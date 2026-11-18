@@ -1,0 +1,1 @@
+{"name":"dsh-pet-live-bridge","private":true,"type":"module","scripts":{"start":"node --env-file-if-exists=.env server.mjs","test":"node --test test.mjs integration.test.mjs"},"engines":{"node":">=22.9"}}

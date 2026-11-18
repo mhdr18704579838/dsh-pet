@@ -1,0 +1,25 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>大肥鱼直播桥</title>
+<style>body{margin:0;background:#edf6ff;color:#193653;font:17px system-ui}main{max-width:860px;margin:45px auto;padding:25px}button,input{font:inherit;padding:12px;border:1px solid #b5cde5;border-radius:10px;margin:5px}button{cursor:pointer;background:#fff}input{max-width:90%}#stage{padding:35px;background:#fff;border-radius:20px;margin:22px 0;min-height:160px}#reply{font-size:30px;line-height:1.6}#question{color:#567}#status{white-space:pre-wrap}body.overlay{background:transparent}body.overlay .controls{display:none}body.overlay main{margin:0;padding:0;max-width:none}body.overlay #stage{background:#102238dd;color:white}body.overlay #question{color:#bde}</style>
+<main><div class="controls"><h1>大肥鱼 · 直播桥</h1><p>先启用声音，再开始。模拟模式不连接抖音、不调用模型。</p><button id="sound">启用声音 / 测试</button><button id="start">开始处理</button><button id="stop">停止并清空</button><button id="overlay">字幕模式</button><p id="status"></p><form id="form"><input id="user" value="测试观众" maxlength="60" aria-label="昵称"><input id="comment" placeholder="输入测试弹幕" maxlength="300" required aria-label="弹幕"><button>加入队列</button></form><p>OBS 可采集本窗口的字幕区域；角色另外采集桌宠窗口。仅保持一个播放页开启。</p></div><section id="stage"><div id="question">等待弹幕</div><div id="reply">欢迎来到大肥鱼的直播间</div></section></main>
+<script type="module">
+const key=location.hash.slice(1)||sessionStorage.getItem('liveToken')||prompt('输入终端显示的本地访问口令');
+if(key)sessionStorage.setItem('liveToken',key);history.replaceState(null,'',location.pathname);
+const $=id=>document.getElementById(id); let enabled=false,lastId=null,player=null,blobUrl=null,inflight=false;
+async function api(path,data){const r=await fetch(path,{method:data?'POST':'GET',headers:{Authorization:'Bearer '+key,...(data?{'Content-Type':'application/json'}:{})},body:data?JSON.stringify(data):undefined});if(!r.ok)throw Error((await r.json()).error||r.status);return r;}
+function silence(){speechSynthesis.cancel();if(player){player.pause();player=null;}if(blobUrl){URL.revokeObjectURL(blobUrl);blobUrl=null;}}
+$('sound').onclick=()=>{enabled=true;const u=new SpeechSynthesisUtterance('声音已开启');u.lang='zh-CN';speechSynthesis.speak(u);};
+$('start').onclick=()=>{if(!enabled)return alert('请先点击启用声音');api('/control',{action:'start'}).catch(e=>alert(e.message));};
+$('stop').onclick=()=>{silence();api('/control',{action:'stop'}).catch(e=>alert(e.message));};
+$('overlay').onclick=()=>document.body.classList.toggle('overlay');
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.body.classList.remove('overlay');});
+$('form').onsubmit=async e=>{e.preventDefault();try{const result=await(await api('/events',{type:'comment',id:crypto.randomUUID(),user:$('user').value,text:$('comment').value})).json();if(!result.accepted)alert(result.reason);else $('comment').value='';}catch(e){alert(e.message);}};
+async function play(item,demo){
+  lastId=item.id;$('question').textContent=item.user+'：'+item.comment;$('reply').textContent=item.text;
+  const ack=error=>api('/ack',{id:item.id,error}).catch(()=>{});
+  try{
+    if(demo){const u=new SpeechSynthesisUtterance(item.text);u.lang='zh-CN';u.onend=()=>ack(false);u.onerror=()=>ack(true);speechSynthesis.speak(u);}
+    else{const r=await api('/audio?id='+encodeURIComponent(item.id));blobUrl=URL.createObjectURL(await r.blob());player=new Audio(blobUrl);player.onended=()=>{silence();ack(false);};player.onerror=()=>ack(true);await player.play();}
+  }catch{await ack(true);}
+}
+setInterval(async()=>{if(inflight)return;inflight=true;try{const s=await(await api('/state')).json();$('status').textContent=`${s.demo?'模拟模式':'真实模型 + 桌宠模式'} · ${s.running?'运行中':'已停止'} · 排队 ${s.queued}${s.busy?' · 正在生成':''}\n${s.error}`;if(!s.running&&!s.active)silence();if(enabled&&s.active&&s.active.id!==lastId)await play(s.active,s.demo);}catch(e){$('status').textContent=e.message;}finally{inflight=false;}},500);
+</script></html>
